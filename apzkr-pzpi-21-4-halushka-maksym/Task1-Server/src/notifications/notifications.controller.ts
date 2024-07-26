@@ -31,15 +31,6 @@ export class NotificationsController {
     return this.notificationsService.create(notification);
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Update a notification' })
-  @ApiParam({ name: 'id', description: 'The ID of the notification', type: Number })
-  @ApiBody({ type: Notification })
-  @ApiResponse({ status: 200, description: 'The notification has been updated.' })
-  update(@Param('id') id: number, @Body() notification: Partial<Notification>): Promise<void> {
-    return this.notificationsService.update(id, notification);
-  }
-
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a notification' })
   @ApiParam({ name: 'id', description: 'The ID of the notification', type: Number })

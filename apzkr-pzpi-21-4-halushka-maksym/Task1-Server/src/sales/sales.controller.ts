@@ -1,23 +1,22 @@
-// sales.controller.ts
-import { Controller, Get, Post, Param, Delete, Body, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Delete, Body, Put, UseGuards, Logger } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { Sale } from './sale.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { CreateSaleDto } from './create-sale.dto';
 import { UpdateSaleDto } from './update-sale.dto';
 
 @ApiTags('sales')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('sales')
 export class SalesController {
+  private readonly logger = new Logger(SalesController.name);
+
   constructor(private readonly salesService: SalesService) {}
 
-  @Get()
+  @Get('view-product-list')
   @ApiOperation({ summary: 'Get all sales' })
   @ApiResponse({ status: 200, description: 'Return all sales.', type: [Sale] })
   findAll(): Promise<Sale[]> {
+    this.logger.log('Getting all sales');
     return this.salesService.findAll();
   }
 
@@ -26,24 +25,17 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'The ID of the sale', type: Number })
   @ApiResponse({ status: 200, description: 'Return the sale by id.', type: Sale })
   findOne(@Param('id') id: number): Promise<Sale> {
+    this.logger.log(`Getting sale with ID: ${id}`);
     return this.salesService.findOne(id);
   }
 
-  @Post()
+  @Post('add-product')
   @ApiOperation({ summary: 'Create a new sale' })
   @ApiBody({ type: CreateSaleDto })
   @ApiResponse({ status: 201, description: 'The sale has been created.', type: Sale })
   async create(@Body() createSaleDto: CreateSaleDto): Promise<Sale> {
+    this.logger.log('Creating new sale:', createSaleDto);
     return this.salesService.create(createSaleDto);
-  }
-
-  @Put(':id')
-  @ApiOperation({ summary: 'Update a sale' })
-  @ApiParam({ name: 'id', description: 'The ID of the sale', type: Number })
-  @ApiBody({ type: UpdateSaleDto })
-  @ApiResponse({ status: 200, description: 'The sale has been updated.', type: Sale })
-  async update(@Param('id') id: number, @Body() updateSaleDto: UpdateSaleDto): Promise<Sale> {
-    return this.salesService.update(id, updateSaleDto);
   }
 
   @Delete(':id')
@@ -51,6 +43,7 @@ export class SalesController {
   @ApiParam({ name: 'id', description: 'The ID of the sale', type: Number })
   @ApiResponse({ status: 200, description: 'The sale has been deleted.' })
   async remove(@Param('id') id: number): Promise<void> {
+    this.logger.log(`Deleting sale with ID: ${id}`);
     await this.salesService.remove(id);
   }
 }

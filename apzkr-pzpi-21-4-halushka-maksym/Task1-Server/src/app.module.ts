@@ -10,6 +10,8 @@ import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
+import { MarketAnalysisModule } from './market_analysis/market_analysis.module'; 
+import { BackupModule } from './backup/backup.module'; 
 import { Users } from './users/user.entity';
 import { Role } from './roles/role.entity';
 import { Permission } from './permissions/permission.entity';
@@ -17,8 +19,7 @@ import { Sale } from './sales/sale.entity';
 import { MarketAnalysis } from './market_analysis/market_analysis.entity';
 import { Notification } from './notifications/notification.entity';
 import { Log } from './logs/log.entity';
-import { Backup } from './backups/backup.entity';
-import configuration from '../config';
+import configuration from './config';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import configuration from '../config';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.name'),
-        entities: [Users, Role, Permission, Sale, MarketAnalysis, Notification, Log, Backup],
+        entities: [Users, Role, Permission, Sale, MarketAnalysis, Notification, Log],
         migrations: ['dist/migrations/*{.ts,.js}'],
         cli: {
           migrationsDir: 'src/migrations',
@@ -51,6 +52,8 @@ import configuration from '../config';
     PermissionsModule,
     HealthModule,
     AuthModule,
+    MarketAnalysisModule, // додано MarketAnalysisModule
+    BackupModule, // додано BackupModule
   ],
   controllers: [AppController],
   providers: [AppService],

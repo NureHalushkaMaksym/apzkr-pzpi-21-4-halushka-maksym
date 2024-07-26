@@ -1,5 +1,6 @@
+// src/sales/sale.entity.ts
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Users } from '../users/user.entity'; // Переконайтеся, що Users правильно імпортується
+import { Users } from '../users/user.entity';
 
 @Entity()
 export class Sale {
@@ -18,8 +19,7 @@ export class Sale {
   @Column({ name: 'userId' })
   userId: number;
 
-  @ManyToOne(() => Users, user => user.sales) // Встановлення зв'язку з користувачем
-  @JoinColumn({ name: 'userId' }) // Вказівка на зовнішній ключ
-  user: Users; // Визначення типу поля user як Users
-
+  @ManyToOne(() => Users, user => user.sales)
+  @JoinColumn({ name: 'userId' })
+  user: Users;
 }

@@ -33,14 +33,6 @@ export class RolesController {
     return this.rolesService.create(createRoleDto);
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Update a role' })
-  @ApiParam({ name: 'id', description: 'The ID of the role', type: Number })
-  @ApiBody({ type: UpdateRoleDto })
-  @ApiResponse({ status: 200, description: 'The role has been updated.' })
-  update(@Param('id') id: number, @Body() updateRoleDto: UpdateRoleDto): Promise<void> {
-    return this.rolesService.update(id, updateRoleDto);
-  }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a role' })
