@@ -149,7 +149,10 @@
 
 ВСТУП
  
-	Індустрія занурень переживає значний ріст, завдяки збільшенню зацікавленості у зануреннях, дослідженні підводного світу та розвитку технологій. Усвідомлення важливості охорони морського середовища та популярність активного відпочинку у воді стимулюють попит на засоби автоматизації та підтримки для нирців. Нирці можуть не пам'ятати про використання відповідного спорядження, що на перший погляд виглядає як невелика проблема, але може призвести до небезпечних ситуацій і непотрібних витрат. Не надання належної уваги до процесу занурень чи відсутність спостереження з боку організаторів може призвести до втрати часу та грошей, а також до зменшення задоволення від занурення. Для наших бізнес-користувачів, таких як центри для занурень та школи для занурень, питання оптимізації управління зануреннями та автоматизація управління спорядженням є актуальними. Відсутність достатньої інформації про місця для дайвінгу, про нирців та обладнання може призвести до нераціонального використання зайвих ресурсів. Ці проблеми підкреслюють актуальність розробленої програмної системи для автоматизації занурень. Система дозволяє легко занурюватися і додавати дані з комп’ютеру для занурень. Зберігаючи всю інформацію в додатку, користувачі можуть швидко і зручно отримати доступ до докладної інформації про кожну діяльність. Дана система є зручною та легкою в використанні, що збільшує кількість людей, що можуть їй використатися. 
+	У сучасному світі, де харчова індустрія постійно зростає та еволюціонує, забезпечення адекватного аналізу ринку і розуміння попиту є критичними для успіху бізнесу в сфері громадського харчування, ресторанного бізнесу та громадського харчування загалом. Застосування застарілих методів аналізу або недостатня обробка наявних даних можуть призвести до неправильних стратегій розміщення ресторанів, втрати прибутку та низької конкурентоспроможності. 
+	Метою проекту полягає у створенні програмної системи, яка забезпечить зручний і ефективний аналіз зон збуту їжі, що буде призначена для власників ресторанів, менеджерів з постачання, маркетологів та інших зацікавлених сторін, щоб надати їм можливість аналізувати дані щодо розподілу споживчого попиту на їжу у різних областях. Це допоможе їм приймати обґрунтовані рішення щодо розміщення нових ресторанів, оптимізації постачання та розвитку рекламних стратегій. 
+	Програмна система для зон збуту їжі може підвищити прибутковість та забезпечити правильне розміщення ресторанів та постачання, що зменшить витрати та збільшить обсяги продажів, також швидке реагування на зміни в споживчому попиті дозволяє бути впереді конкурентів та привертати більше клієнтів.
+
 
 
 
@@ -630,7 +633,7 @@ DELETE
 Документація Next.js: https://create.t3.gg/uk/usage/next-js
 Документація Nest.js: https://foxminded.ua/ru/nest-js/
 GitHub репозитроій проекту. URL: https://github.com/NureHalushkaMaksym/apzkr-pzpi-21-4-halushka-maksym
-Демонстрація тестування розробленої програмної системи:
+Демонстрація тестування розробленої програмної системи: https://youtu.be/iFl7Tr3L29I
 Документація Raspberry Pi: https://www.raspberrypi.com
 
 
@@ -648,11 +651,9 @@ GitHub репозитроій проекту. URL: https://github.com/NureHalush
 
 
 
-
 ДОДАТОК А 
-Код програми
-
-// main.ts
+Код програми серверної частини
+A.1 Головний файл серверної частини
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -660,22 +661,22 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors({ origin: 'http://localhost:3001', credentials: true });
+
+
+  app.setGlobalPrefix('api');
 
 
   const config = new DocumentBuilder()
     .setTitle('Програмна система для аналізу зон збуту їжі')
     .setDescription('API for managing food sales')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-    customSiteTitle: 'Food Sales API Documentation',
-  });
+  SwaggerModule.setup('api/docs', app, document);
 
 
   await app.listen(3000);
@@ -683,7 +684,117 @@ async function bootstrap() {
 bootstrap();
 
 
-// app.module.ts
+А.2 Код, який відповідає за резервній копії баз даних
+
+	import { Controller, Get, Res, HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
+import * as path from 'path';
+
+
+@Controller('api/backup')
+export class BackupController {
+  @Get('download')
+  async downloadBackup(@Res() res: Response) {
+   
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Failed to send file:', err.message);
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Failed to send file', error: err.message });
+      }
+    });
+  }
+}
+
+
+import { Module } from '@nestjs/common';
+import { BackupController } from './backup.controller';
+import { BackupService } from './backup.service';
+
+
+@Module({
+  controllers: [BackupController],
+  providers: [BackupService],
+})
+export class BackupModule {}
+
+import { Injectable } from '@nestjs/common';
+import * as fs from 'fs';
+import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+
+const execPromise = promisify(exec);
+
+
+@Injectable()
+export class BackupService {
+  private readonly backupDir = path.resolve('C:', 'Users', 'maxha', 'backup');
+
+
+  constructor() {
+    if (!fs.existsSync(this.backupDir)) {
+      fs.mkdirSync(this.backupDir, { recursive: true });
+    }
+  }
+
+
+  async createBackup(): Promise<string> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFile = path.join(this.backupDir, `backup-${timestamp}.sql`);
+    console.log(`Creating backup at: ${backupFile}`);
+
+
+    try {
+      await execPromise(`pg_dump -U postgres -F c -b -v -f "${backupFile}" my_database`);
+      console.log(`Backup created at: ${backupFile}`);
+      return backupFile;
+    } catch (error) {
+      console.error('Backup creation failed:', error.message);
+      throw new Error('Backup failed');
+    }
+  }
+
+
+  async downloadBackup(filePath: string): Promise<Buffer> {
+    console.log(`Downloading backup from: ${filePath}`);
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File does not exist');
+    }
+
+
+    try {
+      return fs.promises.readFile(filePath);
+    } catch (error) {
+      console.error('File read failed:', error.message);
+      throw new Error('File read failed');
+    }
+  }
+
+
+  async getLatestBackupFile(): Promise<string> {
+    const files = await fs.promises.readdir(this.backupDir);
+    if (files.length === 0) {
+      throw new Error('No backup files found');
+    }
+
+
+    const sortedFiles = files
+      .map(file => ({
+        file,
+        stats: fs.statSync(path.join(this.backupDir, file)),
+      }))
+      .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+
+
+    const latestFile = path.join(this.backupDir, sortedFiles[0].file);
+    console.log(`Latest backup file: ${latestFile}`);
+    return latestFile;
+  }
+}
+
+А.3 Код, який відповідає за всі модулі
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -694,17 +805,18 @@ import { SalesModule } from './sales/sales.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
-import { HealthModule } from './health/health.module'; 
-import { AuthModule } from './auth/auth.module'; // Додано AuthModule
-import { User } from './users/user.entity';
+import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
+import { MarketAnalysisModule } from './market_analysis/market_analysis.module';
+import { BackupModule } from './backup/backup.module';
+import { Users } from './users/user.entity';
 import { Role } from './roles/role.entity';
 import { Permission } from './permissions/permission.entity';
 import { Sale } from './sales/sale.entity';
 import { MarketAnalysis } from './market_analysis/market_analysis.entity';
 import { Notification } from './notifications/notification.entity';
 import { Log } from './logs/log.entity';
-import { Backup } from './backups/backup.entity';
-import configuration from '../config';
+import configuration from './config';
 
 
 @Module({
@@ -722,7 +834,11 @@ import configuration from '../config';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.name'),
-        entities: [User, Role, Permission, Sale, MarketAnalysis, Notification, Log, Backup],
+        entities: [Users, Role, Permission, Sale, MarketAnalysis, Notification, Log],
+        migrations: ['dist/migrations/*{.ts,.js}'],
+        cli: {
+          migrationsDir: 'src/migrations',
+        },
         synchronize: false,
       }),
       inject: [ConfigService],
@@ -733,7 +849,9 @@ import configuration from '../config';
     RolesModule,
     PermissionsModule,
     HealthModule,
-    AuthModule, // Додано AuthModule
+    AuthModule,
+    MarketAnalysisModule,
+    BackupModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -741,90 +859,252 @@ import configuration from '../config';
 export class AppModule {}
 
 
-// config.ts
-export default () => ({
-  database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'halushka1',
-    name: process.env.DB_NAME || 'food sales',
-  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ДОДАТОК Б 
+Код програми клієнтської частини
+
+Б.1 Код головної сторінки
+
+
+"use client";
+
+
+import React, { ReactNode } from 'react';
+import { AppBar, Toolbar, Typography, Button } from '@mui/material';
+import Link from 'next/link';
+import { AuthProvider } from './contexts/AuthContext';
+
+
+interface RootLayoutProps {
+  children: ReactNode;
+}
+
+
+const Header: React.FC = () => {
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <Typography variant="h6" style={{ flexGrow: 1 }}>
+          Food Sales Zones
+        </Typography>
+        <Button color="inherit" component={Link} href="/sign-in">Sign In</Button>
+        <Button color="inherit" component={Link} href="/sign-up">Sign Up</Button>
+      </Toolbar>
+    </AppBar>
+  );
+};
+
+
+const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
+  return (
+    <html lang="en">
+      <head>
+        <title>Food Sales Zones</title>
+        <meta name="description" content="Welcome to the software system Food Sales Zones" />
+      </head>
+      <body>
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
+      </body>
+    </html>
+  );
+};
+
+
+export default RootLayout;
+
+Б.2 Код завантаження бази даних
+
+
+"use client";
+
+
+import React from 'react';
+import { Container, Button, Typography } from '@mui/material';
+
+
+const BackupPage: React.FC = () => {
+  const handleDownloadBackup = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/backup/download');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'bd.sql';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to download backup: ${errorText}`);
+      }
+    } catch (error) {
+      alert(`Failed to download backup: ${error.message}`);
+    }
+  };
+
+
+  return (
+    <Container>
+      <Typography variant="h4">Backup Page</Typography>
+      <Button variant="contained" color="primary" onClick={handleDownloadBackup}>
+        Download Backup
+      </Button>
+    </Container>
+  );
+};
+
+
+export default BackupPage;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ДОДАТОК В 
+Код програми IoT пристрою
+В.1 Головний код смарт пристрою
+
+const express = require('express');
+const axios = require('axios');
+const app = express();
+const port = 3002;
+
+
+const getProductsFromApi = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/api/sales/view-product-list');
+    return response.data;
+  } catch (err) {
+    console.error('Failed to fetch products from API:', err.message);
+    return [];
+  }
+};
+
+
+
+
+const getRandomTemperature = () => Math.floor(Math.random() * (30 - 15 + 1)) + 15;
+
+
+
+
+const getRandomDemandForProducts = (products) => {
+  return products.map(product => ({
+    id: product.id,
+    name: product.name,
+    stock: Math.floor(Math.random() * 100),
+    demand: Math.floor(Math.random() * 100)
+  }));
+};
+
+
+app.get('/api/products', async (req, res) => {
+  try {
+    const products = await getProductsFromApi();
+
+
+    const productsWithStockAndDemand = getRandomDemandForProducts(products);
+    res.json(productsWithStockAndDemand);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
- // auth.module.ts
-
-
-import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { LocalStrategy } from './local.strategy';
-import { PassportModule } from '@nestjs/passport';
-
-
-@Module({
-  imports: [PassportModule],
-  providers: [AuthService, LocalStrategy],
-  controllers: [AuthController],
-})
-export class AuthModule {}
-//backup.entity.ts
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
-
-
-@Entity()
-export class Backup {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  backup_date: Date;
-
-
-  @Column()
-  file_path: string;
-}
-
-
-//health.module.ts
-
-
-import { Module } from '@nestjs/common';
-import { TerminusModule } from '@nestjs/terminus';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { HealthController } from './health.controller';
-
-
-@Module({
-  imports: [TerminusModule, TypeOrmModule],
-  controllers: [HealthController],
-})
-export class HealthModule {}
 
 
 
 
-//log.entity.ts
+app.get('/api/temperature', (req, res) => {
+  res.json({ temperature: getRandomTemperature() });
+});
 
 
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
-import { User } from '../users/user.entity';
 
 
-@Entity()
-export class Log {
-  @PrimaryGeneratedColumn()
-  id: number;
+app.get('/api/demand', async (req, res) => {
+  try {
 
 
-  @ManyToOne(() => User, user => user.logs)
-  user: User;
+    const products = await getProductsFromApi();
 
 
-  @Column()
-  action: string;
+    const demand = getRandomDemandForProducts(products);
+    res.json(demand);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  timestamp: Date;
-}
+app.listen(port, () => {
+  console.log(`IoT simulator listening at http://localhost:${port}`);
+});
